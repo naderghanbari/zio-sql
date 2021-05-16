@@ -8,7 +8,7 @@ import zio.random.{ Random => ZioRandom }
 import zio.stream.ZStream
 import zio.test.Assertion._
 import zio.test._
-import zio.test.TestAspect.{ ignore, timeout }
+import zio.test.TestAspect.{ failing, ignore, timeout }
 import zio.duration._
 
 object FunctionDefSpec extends PostgresRunnableSpec with ShopSchema {
@@ -953,6 +953,19 @@ object FunctionDefSpec extends PostgresRunnableSpec with ShopSchema {
 
       assertion.mapErrorCause(cause => Cause.stackless(cause.untraced))
     },
+    testM("lower(literal)") {
+      val query = select(Lower("LITERAL String")) from customers limit (1)
+
+      val expected = "lower"
+
+      val testResult = execute(query.to[String, String](identity))
+
+      val assertion = for {
+        r <- testResult.runCollect
+      } yield assert(r.head)(equalTo(expected))
+
+      assertion.mapErrorCause(cause => Cause.stackless(cause.untraced))
+    } @@ failing,
     testM("octet_length") {
       val query = select(OctetLength("josé")) from customers
 

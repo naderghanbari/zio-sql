@@ -3,6 +3,7 @@ package zio.sql.mysql
 import zio.Cause
 import zio.test._
 import zio.test.Assertion._
+import zio.test.TestAspect.failing
 
 object FunctionDefSpec extends MysqlRunnableSpec with ShopSchema {
 
@@ -24,6 +25,19 @@ object FunctionDefSpec extends MysqlRunnableSpec with ShopSchema {
 
       assertion.mapErrorCause(cause => Cause.stackless(cause.untraced))
     },
+    testM("lower(literal)") {
+      val query = select(Lower("LITERAL String")) from customers limit (1)
+
+      val expected = "lower"
+
+      val testResult = execute(query.to[String, String](identity))
+
+      val assertion = for {
+        r <- testResult.runCollect
+      } yield assert(r.head)(equalTo(expected))
+
+      assertion.mapErrorCause(cause => Cause.stackless(cause.untraced))
+    } @@ failing,
     testM("sin") {
       val query = select(Sin(1.0)) from customers
 
